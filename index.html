@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cámara a Google Drive</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 30px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        .auth-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .status.info {
+            background: #e3f2fd;
+            color: #1976d2;
+            border: 1px solid #90caf9;
+        }
+
+        .status.success {
+            background: #e8f5e9;
+            color: #388e3c;
+            border: 1px solid #81c784;
+        }
+
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef5350;
+        }
+
+        button {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        button:hover {
+            background: #357ae8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(66, 133, 244, 0.3);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        button.logout {
+            background: #dc3545;
+        }
+
+        button.logout:hover {
+            background: #c82333;
+        }
+
+        button.capture {
+            background: #34a853;
+        }
+
+        button.capture:hover {
+            background: #2d8e47;
+        }
+
+        .camera-section {
+            display: none;
+        }
+
+        .camera-section.active {
+            display: block;
+        }
+
+        video, canvas {
+            width: 100%;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            background: #000;
+        }
+
+        canvas {
+            display: none;
+        }
+
+        .preview {
+            margin-top: 20px;
+        }
+
+        .preview img {
+            width: 100%;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .user-info img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+
+        .user-info .name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .user-info .email {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .google-icon {
+            width: 20px;
+            height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📸 Cámara a Google Drive</h1>
+
+        <div id="authSection" class="auth-section">
+            <div class="status info">
+                Por favor, inicia sesión con tu cuenta de Google para continuar
+            </div>
+            <button id="loginBtn" onclick="handleLogin()">
+                <svg class="google-icon" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                Iniciar sesión con Google
+            </button>
+        </div>
+
+        <div id="userSection" style="display: none;">
+            <div id="userInfo" class="user-info"></div>
+            <button class="logout" onclick="handleLogout()">Cerrar sesión</button>
+        </div>
+
+        <div id="cameraSection" class="camera-section">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas"></canvas>
+
+            <button class="capture" onclick="capturePhoto()">📷 Tomar Foto</button>
+            <button onclick="stopCamera()">❌ Cerrar Cámara</button>
+
+            <div id="preview" class="preview"></div>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <script>
+        // Credenciales ACTUALIZADAS (pegadas de tus datos)
+        // Asegúrate de que el CLIENT_ID de tu archivo JSON esté aquí:
+        const CLIENT_ID = '364672144294-veomvqfc4301luef23ofb05ciqpq98p4.apps.googleusercontent.com';
+        // Tu API Key:
+        const API_KEY = 'AIzaSyASXynCWpfFJkUl0KCP9o--7xTE_FD86Hk';
+
+        const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+        const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+
+        let tokenClient;
+        let gapiInited = false;
+        let gisInited = false;
+        let stream = null;
+
+        // Cargar las librerías de Google
+        function loadGoogleAPIs() {
+            const gapiScript = document.createElement('script');
+            gapiScript.src = 'https://apis.google.com/js/api.js';
+            gapiScript.onload = gapiLoaded;
+            document.body.appendChild(gapiScript);
+
+            const gisScript = document.createElement('script');
+            gisScript.src = 'https://accounts.google.com/gsi/client';
+            gisScript.onload = gisLoaded;
+            document.body.appendChild(gisScript);
+        }
+
+        function gapiLoaded() {
+            gapi.load('client', initializeGapiClient);
+        }
+
+        async function initializeGapiClient() {
+            await gapi.client.init({
+                apiKey: API_KEY,
+                discoveryDocs: [DISCOVERY_DOC],
+            });
+            gapiInited = true;
+        }
+
+        function gisLoaded() {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                callback: '', // Se define más adelante
+            });
+            gisInited = true;
+        }
+
+        function handleLogin() {
+            tokenClient.callback = async (resp) => {
+                if (resp.error !== undefined) {
+                    showStatus('Error al iniciar sesión: ' + resp.error, 'error');
+                    return;
+                }
+
+                await loadUserInfo();
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('userSection').style.display = 'block';
+                document.getElementById('cameraSection').classList.add('active');
+                showStatus('¡Sesión iniciada correctamente!', 'success');
+                startCamera();
+            };
+
+            if (gapi.client.getToken() === null) {
+                tokenClient.requestAccessToken({prompt: 'consent'});
+            } else {
+                tokenClient.requestAccessToken({prompt: ''});
+            }
+        }
+
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+                    headers: {
+                        Authorization: `Bearer ${gapi.client.getToken().access_token}`
+                    }
+                });
+                const userInfo = await response.json();
+
+                document.getElementById('userInfo').innerHTML = `
+                    <img src="${userInfo.picture}" alt="Avatar">
+                    <div>
+                        <div class="name">${userInfo.name}</div>
+                        <div class="email">${userInfo.email}</div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error al cargar información del usuario:', error);
+            }
+        }
+
+        function handleLogout() {
+            const token = gapi.client.getToken();
+            if (token !== null) {
+                google.accounts.oauth2.revoke(token.access_token);
+                gapi.client.setToken('');
+            }
+
+            stopCamera();
+            document.getElementById('authSection').style.display = 'block';
+            document.getElementById('userSection').style.display = 'none';
+            document.getElementById('cameraSection').classList.remove('active');
+            document.getElementById('preview').innerHTML = '';
+            showStatus('Sesión cerrada', 'info');
+        }
+
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' },
+                    audio: false 
+                });
+                document.getElementById('video').srcObject = stream;
+                showStatus('Cámara activada', 'success');
+            } catch (error) {
+                showStatus('Error al acceder a la cámara: ' + error.message, 'error');
+            }
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                document.getElementById('video').srcObject = null;
+                stream = null;
+            }
+        }
+
+        function capturePhoto() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0);
+
+            canvas.toBlob(async (blob) => {
+                const preview = document.getElementById('preview');
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(blob);
+
+                const uploadBtn = document.createElement('button');
+                uploadBtn.textContent = '☁️ Subir a Google Drive';
+                uploadBtn.onclick = () => uploadToDrive(blob);
+
+                preview.innerHTML = '';
+                preview.appendChild(img);
+                preview.appendChild(uploadBtn);
+            }, 'image/jpeg', 0.95);
+        }
+
+        async function uploadToDrive(blob) {
+            showStatus('Subiendo foto a Google Drive...', 'info');
+
+            try {
+                const metadata = {
+                    name: `foto_${new Date().getTime()}.jpg`,
+                    mimeType: 'image/jpeg'
+                };
+
+                const form = new FormData();
+                form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+                form.append('file', blob);
+
+                const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${gapi.client.getToken().access_token}`
+                    },
+                    body: form
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showStatus('✅ Foto subida exitosamente a Google Drive!', 'success');
+                    document.getElementById('preview').innerHTML = '';
+                } else {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Error al subir archivo');
+                }
+            } catch (error) {
+                showStatus('❌ Error al subir la foto: ' + error.message, 'error');
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = 'status ' + type;
+            statusDiv.textContent = message;
+            statusDiv.style.display = 'block';
+
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Inicializar al cargar la página
+        window.onload = loadGoogleAPIs;
+    </script>
+</body>
+</html>
