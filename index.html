@@ -172,7 +172,9 @@
             height: 20px;
         }
     </style>
+
 </head>
+
 <body>
     <div class="container">
         <h1>📸 Cámara a Google Drive</h1>
@@ -211,10 +213,12 @@
     </div>
 
     <script>
-        // Credenciales ACTUALIZADAS (pegadas de tus datos)
-        // Asegúrate de que el CLIENT_ID de tu archivo JSON esté aquí:
-        const CLIENT_ID = '364672144294-veomvqfc4301luef23ofb05ciqpq98p4.apps.googleusercontent.com';
-        // Tu API Key:
+        // ==============================================
+        // 🔑 CREDENCIALES ACTUALIZADAS PARA GITHUB PAGES
+        // ==============================================
+        // ID del Cliente Web 2 (el que tiene la URL de GitHub Pages autorizada)
+        const CLIENT_ID = '364672144294-bftoab4ntvsg2jjd682jro5km6ofabje.apps.googleusercontent.com'; // <--- ¡NUEVO ID DE GITHUB PAGES APLICADO!
+        // Tu API Key (Deberías restringir esta clave en Google Cloud)
         const API_KEY = 'AIzaSyASXynCWpfFJkUl0KCP9o--7xTE_FD86Hk';
 
         const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
@@ -319,9 +323,9 @@
 
         async function startCamera() {
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ 
+                stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { facingMode: 'environment' },
-                    audio: false 
+                    audio: false 
                 });
                 document.getElementById('video').srcObject = stream;
                 showStatus('Cámara activada', 'success');
